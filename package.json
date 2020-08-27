@@ -1,10 +1,10 @@
 {
   "name": "nest-ws-tutorial",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Build a WebSockets (Socket.IO) Server",
+  "author": "André",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
