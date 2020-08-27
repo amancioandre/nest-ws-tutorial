@@ -6,6 +6,7 @@
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="https://unpkg.com/vue-simple-notify/dist/vue-simple-notify.min.css">
+    <script src="https://unpkg.com/vue-simple-notify/dist/vue-simple-notify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
 </head>
@@ -52,6 +53,10 @@
                 receiveChatMsg(msg) {
                     console.log(`Received: ${msg}`)
                     this.messages.push(msg)
+                },
+                receiveAlertMsg(msg) {
+                    console.log(`Received: ${msg}`)
+                    this.alerts.push(msg)
                 }
             },
             created() {
@@ -62,7 +67,7 @@
                 })
 
                 this.sockets.alert = io.connect("http://localhost:3000/alert")
-                this.sockets.alert.on("alertToClient", (msg) => {
+                this.sockets.alert.on("alertClient", (msg) => {
                     this.receiveAlertMsg(msg)
                 })
             }
