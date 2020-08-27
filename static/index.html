@@ -21,9 +21,17 @@
                 <input type="text" v-model="text" />
                 <button type="submit" @click.prevent="sendChatMsg">Send</button>
             </form>
+            <div class="tab-row">
+                <button class="tab-btn" :class="{ active: activeRoom === 'general'}" @click="activeRoom = 'general'">General</button>
+                <button class="tab-btn" :class="{ active: activeRoom === 'typescript'}" @click="activeRoom = 'typescript'">TypeScript</button>
+                <button class="tab-btn" :class="{ active: activeRoom === 'nestjs'}" @click="activeRoom = 'nestjs'">NestJS</button>
+            </div>
+            <div class="tab-row">
+                Status: {{ isMemberOfActiveRoom ? "Joined" : "Not Joined" }} <button @click="toggleMembership">{{ isMemberOfActiveRoom ? "Leave" : "Join" }}</button>
+            </div>
             <p>
                 <ul>
-                    <li v-for="msg of messages">
+                    <li v-for="msg of messages[activeRoom]">
                         <strong>{{ msg.sender }}</strong> {{ msg.message }}
                     </li>
                 </ul>
@@ -37,7 +45,17 @@
             data: {
                 username: '',
                 text: '',
-                messages: [],
+                activeRoom: 'general',
+                messages: {
+                    general: [],
+                    typescript: [],
+                    nestjs: []
+                },
+                rooms: {
+                    general: false,
+                    typescript: false,
+                    nestjs: false
+                },
                 alerts: [],
                 sockets: {
                     chat: null,
@@ -46,17 +64,32 @@
             },
             methods: {
                 sendChatMsg() {
-                    console.log(`Send: ${this.text}`)
-                    this.sockets.chat.emit("chatToServer", { message: this.text, sender: this.username})
-                    this.text = ''
+                    // Check if user is member of active room
+                    if (this.isMemberOfActiveRoom) {
+                        this.sockets.chat.emit("chatToServer", { message: this.text, sender: this.username})
+                        this.text = ''  
+                    } else {
+                        alert('You must be a member of the active room to send messages.')
+                    }
                 },
                 receiveChatMsg(msg) {
-                    console.log(`Received: ${msg}`)
-                    this.messages.push(msg)
+                    this.messages[msg.room].push(msg)
                 },
                 receiveAlertMsg(msg) {
                     console.log(`Received: ${msg}`)
                     this.alerts.push(msg)
+                },
+                toggleMembership() {
+                    if (this.isMemberOfActiveRoom) {
+                        this.socket.chat.emit('leaveRoom', this.activeRoom)
+                    } else {
+                        this.socker.chat.emit('joinRoom', this.activeRoom)
+                    }
+                }
+            },
+            computed: {
+                isMemberOfActiveRoom() {
+                    return this.rooms[this.activeRoom]
                 }
             },
             created() {
@@ -64,6 +97,15 @@
                 this.sockets.chat = io.connect("http://localhost:3000/chat")
                 this.sockets.chat.on("chatToClient", (msg) => {
                     this.receiveChatMsg(msg)
+                })
+                this.sockets.chat.on("connect", () => {
+                    this.toggleMembership()
+                })
+                this.sockets.chat.on("joinedRoom", (room) => {
+                    this.rooms[room] = true
+                })
+                this.sockets.chat.on("leaveRoom", (room) => {
+                    this.rooms[room] = false
                 })
 
                 this.sockets.alert = io.connect("http://localhost:3000/alert")
