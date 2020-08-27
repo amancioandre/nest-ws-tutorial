@@ -2,7 +2,9 @@ import { SubscribeMessage, WebSocketGateway, OnGatewayInit, WsResponse, OnGatewa
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  namespace: "/"
+})
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private logger: Logger = new Logger("AppGateway");
 
