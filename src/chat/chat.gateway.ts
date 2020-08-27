@@ -5,7 +5,7 @@ import { Socket, Server } from 'socket.io';
 @WebSocketGateway({
   namespace: "/chat"
 })
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit {
   private logger: Logger = new Logger("ChatGateway");
 
   @WebSocketServer() wss: Server
@@ -14,16 +14,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.logger.log("Initialized")
   }
 
-  handleConnection(client: Socket): void {
-    this.logger.log(`Client connected: ${client.id}`)
-  }
-
-  handleDisconnect(client: Socket): void {
-    this.logger.log(`Client disconnected: ${client.id}`)
-  }
-
   @SubscribeMessage('chatToServer')
-  handleMessage(client: Socket, message: { sender: string, message: string}): void {
-    this.wss.emit("chatToClient", message);
+  handleMessage(client: Socket, message: { sender: string, message: string, room: string }): void {
+    this.wss.to(message.room).emit("chatToClient", message);
+  }
+
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(client: Socket, room: string): void {
+    client.join(room)
+    client.emit('joinedRoom', room)
+  }
+
+  @SubscribeMessage('leaveRoom')
+  handleLeaveRoom(client: Socket, room: string): void {
+    client.leave(room)
+    client.emit('leftRoom', room)
   }
 }
