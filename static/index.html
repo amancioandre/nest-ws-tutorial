@@ -4,46 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/vue-simple-notify/dist/vue-simple-notify.min.css">
+    <script src="https://unpkg.com/vue-simple-notify/dist/vue-simple-notify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <div id="v-app">
-        <h1>{{ title }}</h1>
-        <form>
-            <input type="text" v-model="text" />
-            <button type="submit" @click.prevent="sendMessage">Send</button>
-        </form>
-        <p>
-            <ul>
-                <li v-for="msg of messages">{{ msg }}</li>
-            </ul>
-        </p>
-    </div>
+    <main id="v-app">
+        <section class="alerts">
+            <alerts-component :items="alerts"></alerts-component>
+        </section>
+        <section class="chat">
+            <h1>WebSockets Tester</h1>
+            <form>
+                <input type="text" v-model="text" />
+                <button type="submit" @click.prevent="sendChatMsg">Send</button>
+            </form>
+            <p>
+                <ul>
+                    <li v-for="msg of messages">
+                        <strong>{{ msg.sender }}</strong> {{ msg.message }}
+                    </li>
+                </ul>
+            </p>
+        </section>
+    </main>
     <script>
+        Vue.component('alerts-component', VueSimpleNotify.VueSimpleNotify)
         const app = new Vue({
             el: "#v-app",
             data: {
-                title: 'WebSockets Tester',
+                username: '',
                 text: '',
-                messages: ["some message", "another message"],
-                socket: null
+                messages: [],
+                alerts: [],
+                sockets: {
+                    chat: null,
+                    alerts: null
+                }
             },
             methods: {
-                sendMessage() {
+                sendChatMsg() {
                     console.log(`Send: ${this.text}`)
-                    this.socket.emit("msgToServer", this.text)
+                    this.sockets.chat.emit("chatToServer", { message: this.text, sender: this.username})
                     this.text = ''
                 },
-                receiveMsg(msg) {
+                receiveChatMsg(msg) {
                     console.log(`Received: ${msg}`)
                     this.messages.push(msg)
+                },
+                receiveAlertMsg(msg) {
+                    console.log(`Received: ${msg}`)
+                    this.alerts.push(msg)
                 }
             },
             created() {
-                this.socket = io.connect("http://localhost:3000/")
-                this.socket.on("msgToClient", (msg) => {
-                    this.receiveMsg(msg)
+                this.username = prompt('Enter username: ')
+                this.sockets.chat = io.connect("http://localhost:3000/chat")
+                this.sockets.chat.on("chatToClient", (msg) => {
+                    this.receiveChatMsg(msg)
+                })
+
+                this.sockets.alert = io.connect("http://localhost:3000/alert")
+                this.sockets.alert.on("alertClient", (msg) => {
+                    this.receiveAlertMsg(msg)
                 })
             }
         })

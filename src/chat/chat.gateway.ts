@@ -3,10 +3,10 @@ import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 
 @WebSocketGateway({
-  namespace: "/"
+  namespace: "/chat"
 })
-export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-  private logger: Logger = new Logger("AppGateway");
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+  private logger: Logger = new Logger("ChatGateway");
 
   @WebSocketServer() wss: Server
 
@@ -22,9 +22,8 @@ export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGateway
     this.logger.log(`Client disconnected: ${client.id}`)
   }
 
-  @SubscribeMessage('msgToServer')
-  handleMessage(client: Socket, text: string): void {
-    this.wss.emit("msgToClient", text)
-    // return { event: "msgToClient", data: text };
+  @SubscribeMessage('chatToServer')
+  handleMessage(client: Socket, message: { sender: string, message: string}): void {
+    this.wss.emit("chatToClient", message);
   }
 }
